@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { AiSettingsRepository } from './ai-settings.repository';
+import { AppSettingsRepository } from './app-settings.repository';
 import { BlockRepository } from './block.repository';
 import { createConnection } from './create-connection';
 import { DATABASE_CONNECTION } from './database';
@@ -21,6 +22,7 @@ export const DEFAULT_DATABASE_URL = 'pglite:./data/pglite';
     BlockRepository,
     LinkRepository,
     AiSettingsRepository,
+    AppSettingsRepository,
     FileRepository,
     TrashRepository,
     TrashRecorder,
@@ -31,6 +33,7 @@ export const DEFAULT_DATABASE_URL = 'pglite:./data/pglite';
     BlockRepository,
     LinkRepository,
     AiSettingsRepository,
+    AppSettingsRepository,
     FileRepository,
     TrashRepository,
     TrashRecorder,

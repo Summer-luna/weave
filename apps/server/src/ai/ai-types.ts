@@ -22,7 +22,12 @@ export interface ToolSpec {
   description: string;
   schema: z.ZodType;
   destructive?: boolean;
+  readOnly?: boolean;
 }
+
+/** read: search and read only; edit: also change notes; full: also delete (still confirmed per call). */
+export const AGENT_PERMISSION_LEVELS = ['read', 'edit', 'full'] as const;
+export type AgentPermissionLevel = (typeof AGENT_PERMISSION_LEVELS)[number];
 
 export interface ToolOutcome {
   output: string;

@@ -518,6 +518,56 @@
         ]
       }
     },
+    "/api/ai/permission": {
+      "get": {
+        "operationId": "getAgentPermission",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentPermissionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ai"
+        ]
+      },
+      "put": {
+        "operationId": "updateAgentPermission",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentPermissionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentPermissionDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ai"
+        ]
+      }
+    },
     "/api/ai/providers": {
       "get": {
         "operationId": "listAiProviders",
@@ -731,69 +781,6 @@
         ]
       }
     },
-    "/api/files": {
-      "post": {
-        "operationId": "uploadFile",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "file": {
-                    "type": "string",
-                    "format": "binary"
-                  }
-                },
-                "required": [
-                  "file"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StoredFileDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "files"
-        ]
-      }
-    },
-    "/api/files/{id}": {
-      "get": {
-        "operationId": "getFile",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "files"
-        ]
-      }
-    },
     "/api/trash": {
       "get": {
         "operationId": "listTrash",
@@ -880,6 +867,69 @@
         },
         "tags": [
           "trash"
+        ]
+      }
+    },
+    "/api/files": {
+      "post": {
+        "operationId": "uploadFile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredFileDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/api/files/{id}": {
+      "get": {
+        "operationId": "getFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "files"
         ]
       }
     }
@@ -1212,6 +1262,22 @@
           "title"
         ]
       },
+      "AgentPermissionDto": {
+        "type": "object",
+        "properties": {
+          "level": {
+            "enum": [
+              "read",
+              "edit",
+              "full"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "level"
+        ]
+      },
       "AiProviderDto": {
         "type": "object",
         "properties": {
@@ -1271,9 +1337,9 @@
           },
           "keySource": {
             "enum": [
+              "none",
               "settings",
-              "env",
-              "none"
+              "env"
             ],
             "type": "string"
           },
@@ -1422,33 +1488,6 @@
           "approved"
         ]
       },
-      "StoredFileDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "mime": {
-            "type": "string"
-          },
-          "size": {
-            "type": "number"
-          },
-          "url": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "mime",
-          "size",
-          "url"
-        ]
-      },
       "TrashItemDto": {
         "type": "object",
         "properties": {
@@ -1496,6 +1535,33 @@
         },
         "required": [
           "pageTitle"
+        ]
+      },
+      "StoredFileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "mime": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "mime",
+          "size",
+          "url"
         ]
       }
     }

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { AgentPermissionService } from '../src/ai/agent-permission.service';
 import { AgentService } from '../src/ai/agent.service';
 import { AiRunJournal } from '../src/ai/ai-run-journal';
 import { AiSettingsService } from '../src/ai/ai-settings.service';
@@ -10,6 +11,7 @@ import { NOTE_TOOL_SPECS } from '../src/ai/note-tool-specs';
 import { NoteToolkit } from '../src/ai/note-toolkit';
 import { OpenAiProvider } from '../src/ai/openai-provider';
 import { toolJsonSchema } from '../src/ai/tool-json-schema';
+import { AppSettingsRepository } from '../src/storage/app-settings.repository';
 import { BlockRepository } from '../src/storage/block.repository';
 import { TrashService } from '../src/trash/trash.service';
 import { createHarness, Harness } from './harness';
@@ -17,11 +19,14 @@ import { createHarness, Harness } from './harness';
 let h: Harness;
 let toolkit: NoteToolkit;
 let trash: TrashService;
+let permissions: AgentPermissionService;
 
 beforeEach(async () => {
   h = await createHarness();
   trash = new TrashService(h.trashRepository, h.pageRepository, new BlockRepository(h.database), h.pages, h.restorer, h.database);
   toolkit = new NoteToolkit(h.pages, h.blocks, trash);
+  permissions = new AgentPermissionService(new AppSettingsRepository(h.database));
+  await permissions.set('full');
 });
 
 afterEach(async () => {
@@ -131,7 +136,7 @@ describe('AgentService', () => {
     const confirmations = new ConfirmationRegistry();
     const settings = new AiSettingsService(h.aiSettings, claude, new OpenAiProvider(), new CompatibleProvider());
     const journal = new AiRunJournal(h.pages, h.pageRepository, h.blocks, h.restorer, h.database, trash);
-    return { service: new AgentService(settings, toolkit, confirmations, journal), confirmations };
+    return { service: new AgentService(settings, toolkit, confirmations, journal, permissions), confirmations };
   }
 
   it('validates tool input, runs tools and asks before destructive ones', async () => {
@@ -162,6 +167,29 @@ describe('AgentService', () => {
     expect(events.at(-1)).toEqual({ type: 'done', undoable: true });
   });
 
+  it('only offers the tools the permission level allows', async () => {
+    const page = await h.pages.ensure('Inbox');
+    const block = await h.blocks.create({ pageId: page.id, content: 'keep' });
+    const offered: Record<string, string[]> = {};
+    const outcomes: Record<string, unknown> = {};
+    for (const level of ['read', 'edit', 'full'] as const) {
+      await permissions.set(level);
+      const { service } = serviceWith(async ({ tools, execute }) => {
+        offered[level] = tools.map((t) => t.name);
+        outcomes[level] = await execute('c1', 'update_block', { id: block.id, content: `changed by ${level}` });
+      });
+      await service.run({ provider: 'claude', messages: [{ role: 'user', content: 'go' }] }, () => {}, new AbortController().signal);
+    }
+    expect(offered.read).toContain('read_page');
+    expect(offered.read).not.toContain('update_block');
+    expect(offered.edit).toContain('update_block');
+    expect(offered.edit).not.toContain('delete_block');
+    expect(offered.full).toContain('empty_trash');
+    expect(outcomes.read).toMatchObject({ isError: true });
+    expect((await h.blocks.get(block.id)).content).toBe('changed by full');
+    expect(await new AgentPermissionService(new AppSettingsRepository(h.database)).get()).toBe('full');
+  });
+
   it('puts page context on the newest user turn and rejects unconfigured providers', async () => {
     let seen: AgentRunInput | undefined;
     const { service } = serviceWith(async (input) => {
@@ -181,6 +209,7 @@ describe('AgentService', () => {
       toolkit,
       new ConfirmationRegistry(),
       new AiRunJournal(h.pages, h.pageRepository, h.blocks, h.restorer, h.database, trash),
+      permissions,
     );
     const previous = process.env.OPENAI_API_KEY;
     delete process.env.OPENAI_API_KEY;
@@ -262,7 +291,7 @@ describe('undoing an AI run', () => {
     const settings = new AiSettingsService(h.aiSettings, claude, new OpenAiProvider(), new CompatibleProvider());
     const confirmations = new ConfirmationRegistry();
     const journal = new AiRunJournal(h.pages, h.pageRepository, h.blocks, h.restorer, h.database, trash);
-    const service = new AgentService(settings, toolkit, confirmations, journal);
+    const service = new AgentService(settings, toolkit, confirmations, journal, permissions);
     const events: AgentEvent[] = [];
     await service.run(
       { provider: 'claude', messages: [{ role: 'user', content: 'go' }] },

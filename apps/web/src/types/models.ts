@@ -124,3 +124,4 @@ export interface AiChatState {
 
 export type AiSetting = Schemas['AiSettingDto'];
 export type UpdateAiSettingInput = Schemas['UpdateAiSettingDto'];
+export type AgentPermissionLevel = Schemas['AgentPermissionDto']['level'];

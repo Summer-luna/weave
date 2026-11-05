@@ -6,6 +6,7 @@ import { PageService } from '../pages/page.service';
 import { DatabaseService } from '../storage/database.service';
 import { PageRepository } from '../storage/page.repository';
 import { TrashService } from '../trash/trash.service';
+import { NOTE_TOOL_SPECS } from './note-tool-specs';
 
 interface PageSnapshot {
   pageId: string | null;
@@ -20,17 +21,6 @@ interface RunRecord {
   undone: boolean;
 }
 
-const READ_ONLY_TOOLS = new Set([
-  'search_pages',
-  'search_notes',
-  'search_blocks',
-  'read_page',
-  'read_block',
-  'get_block_references',
-  'list_daily_notes',
-  'list_templates',
-  'list_trash',
-]);
 const RUN_TTL_MS = 24 * 60 * 60_000;
 
 /** Remembers how every page an AI run touched looked before its first change, so the whole run can be undone. */
@@ -48,7 +38,7 @@ export class AiRunJournal {
   ) {}
 
   async beforeTool(runId: string, tool: string, input: Record<string, any>): Promise<void> {
-    if (READ_ONLY_TOOLS.has(tool)) return;
+    if (NOTE_TOOL_SPECS.find((spec) => spec.name === tool)?.readOnly) return;
     for (const title of await this.affectedTitles(tool, input)) await this.capture(runId, title);
   }
 

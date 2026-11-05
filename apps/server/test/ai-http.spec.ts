@@ -29,8 +29,17 @@ afterAll(async () => {
   await app.close();
 });
 
+describe('agent permission', () => {
+  it('defaults to edit and saves the chosen level', async () => {
+    expect(await (await fetch(`${base}/ai/permission`)).json()).toEqual({ level: 'edit' });
+    const bad = await fetch(`${base}/ai/permission`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ level: 'root' }) });
+    expect(bad.status).toBe(400);
+  });
+});
+
 describe('POST /api/ai/chat', () => {
   it('streams agent events as SSE and waits for confirmation on destructive tools', async () => {
+    await fetch(`${base}/ai/permission`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ level: 'full' }) });
     const response = await fetch(`${base}/ai/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

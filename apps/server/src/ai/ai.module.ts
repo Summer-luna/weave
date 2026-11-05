@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { BlocksModule } from '../blocks/blocks.module';
 import { PagesModule } from '../pages/pages.module';
 import { TrashModule } from '../trash/trash.module';
+import { AgentPermissionService } from './agent-permission.service';
 import { AgentService } from './agent.service';
 import { AiRunJournal } from './ai-run-journal';
 import { AiSettingsService } from './ai-settings.service';
@@ -15,6 +16,6 @@ import { OpenAiProvider } from './openai-provider';
 @Module({
   imports: [PagesModule, BlocksModule, TrashModule],
   controllers: [AiController],
-  providers: [AgentService, AiRunJournal, AiSettingsService, ClaudeProvider, OpenAiProvider, CompatibleProvider, NoteToolkit, ConfirmationRegistry],
+  providers: [AgentService, AgentPermissionService, AiRunJournal, AiSettingsService, ClaudeProvider, OpenAiProvider, CompatibleProvider, NoteToolkit, ConfirmationRegistry],
 })
 export class AiModule {}

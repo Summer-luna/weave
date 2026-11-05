@@ -1,6 +1,7 @@
 import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import { uid } from '../common/uid';
-import { AgentEvent, AiProviderId, ChatTurn, ToolOutcome, ToolSpec } from './ai-types';
+import { AgentPermissionService } from './agent-permission.service';
+import { AgentEvent, AgentPermissionLevel, AiProviderId, ChatTurn, ToolOutcome, ToolSpec } from './ai-types';
 import { AiRunJournal } from './ai-run-journal';
 import { AiSettingsService } from './ai-settings.service';
 import { ConfirmationRegistry } from './confirmation-registry';
@@ -45,6 +46,7 @@ export class AgentService {
     private readonly toolkit: NoteToolkit,
     private readonly confirmations: ConfirmationRegistry,
     private readonly journal: AiRunJournal,
+    private readonly permissions: AgentPermissionService,
   ) {}
 
   async listProviders() {
@@ -68,15 +70,17 @@ export class AgentService {
     const provider = this.settings.provider(request.provider);
     const config = await this.settings.resolve(provider.id);
     if (!provider.isConfigured(config)) throw new BadRequestException(`${config.label} 还没有配置，请到「设置 → Agent」里填写`);
-    const turns = this.prepareTurns(request);
+    const level = await this.permissions.get();
+    const tools = NOTE_TOOL_SPECS.filter((spec) => this.permissions.allows(level, spec));
+    const turns = this.prepareTurns(request, level);
     const runId = uid();
     emit({ type: 'run', runId, provider: provider.id, model: config.model });
     try {
       await provider.run({
         system: SYSTEM_PROMPT,
         turns,
-        tools: NOTE_TOOL_SPECS,
-        execute: (callId, name, input) => this.executeTool(runId, callId, name, input, emit, signal),
+        tools,
+        execute: (callId, name, input) => this.executeTool(tools, runId, callId, name, input, emit, signal),
         emit,
         signal,
         config,
@@ -87,13 +91,15 @@ export class AgentService {
     emit({ type: 'done', undoable: this.journal.hasChanges(runId) });
   }
 
-  private prepareTurns(request: ChatRequest): ChatTurn[] {
+  private prepareTurns(request: ChatRequest, level: AgentPermissionLevel): ChatTurn[] {
     const turns = request.messages.filter((t) => t.content.trim()).slice(-MAX_HISTORY_TURNS);
     while (turns.length && turns[0].role !== 'user') turns.shift();
     const last = turns[turns.length - 1];
     if (!last || last.role !== 'user') throw new BadRequestException('最后一条消息必须来自用户');
     // Per-request context rides on the newest user turn so the stable system prompt and tools stay cacheable.
     const context = [`Today: ${request.today ?? new Date().toISOString().slice(0, 10)}`];
+    if (level === 'read') context.push('Permission: read-only. You cannot change notes; if asked to, say the user can allow edits in 设置 → Agent.');
+    if (level === 'edit') context.push('Permission: no deleting. If asked to delete, say the user can allow it in 设置 → Agent.');
     if (request.pageTitle) context.push(`The user is looking at the page [[${request.pageTitle}]].`);
     if (request.scope === 'library') context.push('Answer from the whole note library, not just the current page: search broadly with search_notes before answering, and cite ((blockId)) for every claim.');
     turns[turns.length - 1] = { role: 'user', content: `<context>\n${context.join('\n')}\n</context>\n\n${last.content}` };
@@ -101,6 +107,7 @@ export class AgentService {
   }
 
   private async executeTool(
+    tools: ToolSpec[],
     runId: string,
     callId: string,
     name: string,
@@ -109,12 +116,15 @@ export class AgentService {
     signal: AbortSignal,
   ): Promise<ToolOutcome> {
     emit({ type: 'tool_call', id: callId, name, input });
-    const spec = NOTE_TOOL_SPECS.find((s) => s.name === name);
+    const spec = tools.find((s) => s.name === name);
     const fail = (message: string): ToolOutcome => {
       emit({ type: 'tool_result', id: callId, ok: false, output: message, mutated: false });
       return { output: message, isError: true };
     };
-    if (!spec) return fail(`Unknown tool: ${name}`);
+    if (!spec) {
+      const known = NOTE_TOOL_SPECS.some((s) => s.name === name);
+      return fail(known ? `Tool ${name} is not allowed at the current permission level (设置 → Agent).` : `Unknown tool: ${name}`);
+    }
     const parsed = spec.schema.safeParse(input);
     if (!parsed.success) return fail(`Invalid input: ${parsed.error.message}`);
     if (spec.destructive && !(await this.approve(spec, runId, callId, parsed.data, emit, signal))) {

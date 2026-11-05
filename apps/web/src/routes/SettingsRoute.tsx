@@ -1,9 +1,12 @@
 import { Bot } from 'lucide-react';
+import { AgentPermissionCard } from '../components/settings/AgentPermissionCard';
 import { AgentSettingCard } from '../components/settings/AgentSettingCard';
+import { useAgentPermissionController } from '../controllers/use-agent-permission-controller';
 import { useAiSettingsController } from '../controllers/use-ai-settings-controller';
 
 export function SettingsRoute() {
   const { query, settings, save, test } = useAiSettingsController();
+  const permission = useAgentPermissionController();
 
   return (
     <div>
@@ -23,6 +26,7 @@ export function SettingsRoute() {
         {query.isPending && <p className="text-muted">加载中…</p>}
         {query.isError && <p className="text-danger">读取设置失败</p>}
         <div className="space-y-4">
+          <AgentPermissionCard level={permission.level} saving={permission.saving} failed={permission.failed} onChange={permission.change} />
           {settings.map((setting) => (
             <AgentSettingCard
               key={setting.provider}

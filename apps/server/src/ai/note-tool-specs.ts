@@ -14,6 +14,7 @@ export const NOTE_TOOL_SPECS: ToolSpec[] = [
       starred_only: z.boolean().optional(),
       limit: z.number().int().min(1).max(200).optional(),
     }),
+    readOnly: true,
   },
   {
     name: 'search_notes',
@@ -23,36 +24,43 @@ export const NOTE_TOOL_SPECS: ToolSpec[] = [
       keywords: z.array(z.string().min(1).max(100)).min(1).max(12),
       limit: z.number().int().min(1).max(80).optional(),
     }),
+    readOnly: true,
   },
   {
     name: 'search_blocks',
     description: 'Full-text search over block contents across all pages. Returns block ids, page titles and contents.',
     schema: z.object({ query: z.string().min(1), limit: z.number().int().min(1).max(50).optional() }),
+    readOnly: true,
   },
   {
     name: 'read_page',
     description: 'Read a page as an indented outline (every block shown as "[id] content"), plus its linked references and unlinked mentions.',
     schema: z.object({ title }),
+    readOnly: true,
   },
   {
     name: 'read_block',
     description: 'Read one block with its page title, ancestors and all descendants.',
     schema: z.object({ id: blockId }),
+    readOnly: true,
   },
   {
     name: 'get_block_references',
     description: 'List the blocks that embed this block with ((blockId)), grouped by page.',
     schema: z.object({ id: blockId }),
+    readOnly: true,
   },
   {
     name: 'list_daily_notes',
     description: 'List the daily notes of a month that have content (what the calendar view highlights), with their block counts.',
     schema: z.object({ month: z.string().regex(/^\d{4}-\d{2}$/).describe('Month as YYYY-MM, e.g. "2026-11".') }),
+    readOnly: true,
   },
   {
     name: 'list_templates',
     description: 'List template pages (titles starting with "模板/"), the ones the / menu offers.',
     schema: z.object({}),
+    readOnly: true,
   },
   {
     name: 'create_page',
@@ -146,6 +154,7 @@ export const NOTE_TOOL_SPECS: ToolSpec[] = [
     name: 'list_trash',
     description: 'List what is in the trash (deleted pages and blocks), newest first, with the ids needed to restore them.',
     schema: z.object({ limit: z.number().int().min(1).max(200).optional() }),
+    readOnly: true,
   },
   {
     name: 'restore_from_trash',

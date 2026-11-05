@@ -1,7 +1,9 @@
 import { BadRequestException, Body, Controller, Get, HttpCode, NotFoundException, Param, Post, Put, Res } from '@nestjs/common';
 import { ApiProduces, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { AgentPermissionService } from './agent-permission.service';
 import { AgentService } from './agent.service';
+import { AgentPermissionDto } from './dto/agent-permission.dto';
 import { AiSettingsService } from './ai-settings.service';
 import type { AiProviderId } from './ai-types';
 import { AiSettingDto } from './dto/ai-setting.dto';
@@ -19,7 +21,18 @@ export class AiController {
   constructor(
     private readonly agent: AgentService,
     private readonly settings: AiSettingsService,
+    private readonly permissions: AgentPermissionService,
   ) {}
+
+  @Get('permission')
+  async getAgentPermission(): Promise<AgentPermissionDto> {
+    return { level: await this.permissions.get() };
+  }
+
+  @Put('permission')
+  async updateAgentPermission(@Body() body: AgentPermissionDto): Promise<AgentPermissionDto> {
+    return { level: await this.permissions.set(body.level) };
+  }
 
   @Get('providers')
   listAiProviders(): Promise<AiProviderDto[]> {

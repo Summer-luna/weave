@@ -23,6 +23,12 @@ export const aiSettings = pgTable('ai_settings', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const appSettings = pgTable('app_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const files = pgTable('files', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
