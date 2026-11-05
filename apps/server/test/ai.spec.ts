@@ -10,14 +10,18 @@ import { NOTE_TOOL_SPECS } from '../src/ai/note-tool-specs';
 import { NoteToolkit } from '../src/ai/note-toolkit';
 import { OpenAiProvider } from '../src/ai/openai-provider';
 import { toolJsonSchema } from '../src/ai/tool-json-schema';
+import { BlockRepository } from '../src/storage/block.repository';
+import { TrashService } from '../src/trash/trash.service';
 import { createHarness, Harness } from './harness';
 
 let h: Harness;
 let toolkit: NoteToolkit;
+let trash: TrashService;
 
 beforeEach(async () => {
   h = await createHarness();
-  toolkit = new NoteToolkit(h.pages, h.blocks);
+  trash = new TrashService(h.trashRepository, h.pageRepository, new BlockRepository(h.database), h.pages, h.restorer, h.database);
+  toolkit = new NoteToolkit(h.pages, h.blocks, trash);
 });
 
 afterEach(async () => {
@@ -63,6 +67,53 @@ describe('NoteToolkit', () => {
   });
 });
 
+describe('UI-parity tools', () => {
+  it('lists daily notes and templates, applies templates, toggles todos and collapses blocks', async () => {
+    const daily = await h.pages.ensure('2026-11-05');
+    const task = await h.blocks.create({ pageId: daily.id, content: '写周报' });
+    await h.blocks.create({ pageId: daily.id, parentId: task.id, content: '细节' });
+    await h.pages.ensure('2026-11-06');
+    const template = await h.pages.ensure('模板/周报');
+    const section = await h.blocks.create({ pageId: template.id, content: '本周' });
+    await h.blocks.create({ pageId: template.id, parentId: section.id, content: '[ ] ' });
+
+    expect((await toolkit.execute('list_daily_notes', { month: '2026-11' })).output).toEqual([{ title: '2026-11-05', blocks: 2 }]);
+    expect((await toolkit.execute('list_templates', {})).output).toEqual([{ title: '模板/周报', blocks: 2 }]);
+
+    await toolkit.execute('apply_template', { template_title: '模板/周报', page_title: 'Week 45' });
+    const week = await h.pages.detail('Week 45');
+    const root = week.blocks.find((b) => b.parentId === null);
+    expect(root?.content).toBe('本周');
+    expect(week.blocks.find((b) => b.parentId === root?.id)?.content).toBe('[ ] ');
+
+    await toolkit.execute('set_todo', { id: task.id, state: 'todo' });
+    await toolkit.execute('set_todo', { id: task.id, state: 'done' });
+    expect((await h.blocks.get(task.id)).content).toBe('[x] 写周报');
+    await toolkit.execute('set_todo', { id: task.id, state: 'none' });
+    expect((await h.blocks.get(task.id)).content).toBe('写周报');
+
+    await toolkit.execute('set_block_collapsed', { id: task.id, collapsed: true });
+    expect((await h.blocks.get(task.id)).open).toBe(false);
+  });
+
+  it('finds block references and restores items from the trash', async () => {
+    const page = await h.pages.ensure('Notes');
+    const target = await h.blocks.create({ pageId: page.id, content: 'source' });
+    const other = await h.pages.ensure('Other');
+    const ref = await h.blocks.create({ pageId: other.id, content: `see ((${target.id}))` });
+    expect((await toolkit.execute('get_block_references', { id: target.id })).output).toEqual([
+      { page: 'Other', blocks: [{ id: ref.id, content: `see ((${target.id}))` }] },
+    ]);
+
+    await h.pages.remove(other.id);
+    const [item] = (await toolkit.execute('list_trash', {})).output as { id: string; label: string }[];
+    expect(item.label).toBe('Other');
+    const result = await toolkit.execute('restore_from_trash', { id: item.id });
+    expect(result.createdPages).toEqual(['Other']);
+    expect((await h.pages.detail('Other')).blocks.map((b) => b.content)).toEqual([`see ((${target.id}))`]);
+  });
+});
+
 describe('tool specs', () => {
   it('produce object JSON schemas without $schema', () => {
     for (const spec of NOTE_TOOL_SPECS) {
@@ -79,7 +130,7 @@ describe('AgentService', () => {
     Object.assign(claude, { isConfigured: () => true, run: script });
     const confirmations = new ConfirmationRegistry();
     const settings = new AiSettingsService(h.aiSettings, claude, new OpenAiProvider(), new CompatibleProvider());
-    const journal = new AiRunJournal(h.pages, h.pageRepository, h.blocks, h.restorer, h.database);
+    const journal = new AiRunJournal(h.pages, h.pageRepository, h.blocks, h.restorer, h.database, trash);
     return { service: new AgentService(settings, toolkit, confirmations, journal), confirmations };
   }
 
@@ -129,7 +180,7 @@ describe('AgentService', () => {
       new AiSettingsService(h.aiSettings, new ClaudeProvider(), new OpenAiProvider(), new CompatibleProvider()),
       toolkit,
       new ConfirmationRegistry(),
-      new AiRunJournal(h.pages, h.pageRepository, h.blocks, h.restorer, h.database),
+      new AiRunJournal(h.pages, h.pageRepository, h.blocks, h.restorer, h.database, trash),
     );
     const previous = process.env.OPENAI_API_KEY;
     delete process.env.OPENAI_API_KEY;
@@ -187,6 +238,10 @@ describe('undoing an AI run', () => {
     const doomed = await h.pages.ensure('Old');
     await h.blocks.create({ pageId: doomed.id, content: '要被删的页' });
     const before = await h.pages.detail('Journal');
+    const trashed = await h.pages.ensure('Trashed');
+    await h.blocks.create({ pageId: trashed.id, content: '回收站里的页' });
+    await h.pages.remove(trashed.id);
+    const trashedId = (await trash.list())[0].id;
 
     const claude = new ClaudeProvider();
     let runId = '';
@@ -200,11 +255,13 @@ describe('undoing an AI run', () => {
         await execute('5', 'insert_blocks', { page_title: 'Brand New', blocks: [{ content: 'x' }] });
         await execute('6', 'delete_page', { title: 'Old' });
         await execute('7', 'rename_page', { title: 'Journal', new_title: 'Diary' });
+        await execute('8', 'restore_from_trash', { id: trashedId });
+        await execute('9', 'set_todo', { id: keep.id, state: 'todo' });
       },
     });
     const settings = new AiSettingsService(h.aiSettings, claude, new OpenAiProvider(), new CompatibleProvider());
     const confirmations = new ConfirmationRegistry();
-    const journal = new AiRunJournal(h.pages, h.pageRepository, h.blocks, h.restorer, h.database);
+    const journal = new AiRunJournal(h.pages, h.pageRepository, h.blocks, h.restorer, h.database, trash);
     const service = new AgentService(settings, toolkit, confirmations, journal);
     const events: AgentEvent[] = [];
     await service.run(
@@ -228,6 +285,8 @@ describe('undoing an AI run', () => {
     expect((await h.pages.detail('Old')).blocks.map((b) => b.content)).toEqual(['要被删的页']);
     expect((await h.pages.detail('Brand New')).page).toBeNull();
     expect((await h.pages.detail('Diary')).page).toBeNull();
+    expect((await h.pages.detail('Trashed')).page).toBeNull();
+    expect((await trash.list()).map((item) => item.label)).toContain('Trashed');
     await expect(service.undoRun(runId)).rejects.toThrow();
   });
 });

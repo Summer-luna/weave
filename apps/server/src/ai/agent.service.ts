@@ -25,7 +25,9 @@ How to work:
 - Preserve the user's own wording. When asked to organize a page, add markup ([[links]], #tags, structure) rather than rewriting text, unless the user asks for a rewrite.
 - Summaries, analyses and new content you write go into new blocks (insert_blocks) unless the user only wants an answer in chat.
 - When you cite notes in your reply, reference blocks as ((blockId)) and pages as [[Page title]] so the user can click them.
-- Deleting is irreversible and needs the user's confirmation; only delete when the user asked for it.
+- You can do what the user can do in the app: pages, blocks, todos, collapsing, tags, links, block references, templates (pages titled "模板/…"), daily notes and the calendar, favourites and the trash.
+- Attachments are blocks with markdown such as ![name](/api/files/id) or [name](/api/files/id); you cannot upload files, but you can move, copy or reference those blocks. Model and API key settings are only changed by the user in 设置 → Agent.
+- Deleted pages and blocks go to the trash and can be restored with restore_from_trash. Deleting still needs the user's confirmation; only delete when the user asked for it. Deleting from the trash or emptying it is permanent.
 - Keep replies short and reply in the language the user writes in.`;
 
 export interface ChatRequest {
@@ -121,6 +123,7 @@ export class AgentService {
     try {
       await this.journal.beforeTool(runId, name, parsed.data as Record<string, unknown>);
       const result = await this.toolkit.execute(name, parsed.data as Record<string, unknown>);
+      this.journal.afterTool(runId, result.createdPages);
       const text = typeof result.output === 'string' ? result.output : JSON.stringify(result.output);
       const output = text.length > MAX_TOOL_OUTPUT_CHARS ? `${text.slice(0, MAX_TOOL_OUTPUT_CHARS)}…(truncated)` : text;
       emit({ type: 'tool_result', id: callId, ok: true, output: output.slice(0, 2000), mutated: result.mutated });

@@ -3,15 +3,21 @@ import { BlockService } from '../blocks/block.service';
 import { BlockDto } from '../blocks/dto/block.dto';
 import { PageService } from '../pages/page.service';
 import { ReferenceGroupDto } from '../pages/dto/reference-group.dto';
+import { TrashService } from '../trash/trash.service';
 
 export interface ToolkitResult {
   output: unknown;
   mutated: boolean;
+  /** Pages that did not exist before this tool ran and whose titles were only known afterwards. */
+  createdPages?: string[];
 }
 
 const TAG_BLOCK_PREFIX = '标签：';
 const TAG_SAFE = /^[\p{L}\p{N}_\-/]+$/u;
 const MAX_OUTLINE_CHARS = 40_000;
+const TODO_PREFIX = /^\[( |x|X)\] /;
+const TEMPLATE_PREFIX = '模板/';
+const DAILY_TITLE = /^\d{4}-\d{2}-\d{2}$/;
 
 type NewBlock = { content: string; children?: NewBlock[] };
 
@@ -20,13 +26,14 @@ export class NoteToolkit {
   constructor(
     private readonly pages: PageService,
     private readonly blocks: BlockService,
+    private readonly trash: TrashService,
   ) {}
 
   async execute(name: string, input: Record<string, any>): Promise<ToolkitResult> {
     switch (name) {
       case 'search_pages':
         return this.read(
-          (await this.pages.list(input.query || undefined, false, input.limit ?? 20)).map((p) => ({
+          (await this.pages.list(input.query || undefined, input.starred_only ?? false, input.limit ?? 20)).map((p) => ({
             title: p.title,
             blocks: p.blockCount,
             references: p.refCount,
@@ -51,8 +58,36 @@ export class NoteToolkit {
         return this.read(await this.readPage(input.title));
       case 'read_block':
         return this.read(await this.readBlock(input.id));
+      case 'get_block_references':
+        return this.read(
+          (await this.blocks.references(input.id)).map((g) => ({
+            page: g.pageTitle,
+            blocks: g.items.map((item) => ({ id: item.block.id, content: item.block.content })),
+          })),
+        );
+      case 'list_daily_notes':
+        return this.read(
+          (await this.pages.list(input.month, false, 1000))
+            .filter((p) => DAILY_TITLE.test(p.title) && p.title.startsWith(input.month) && p.blockCount > 0)
+            .sort((a, b) => a.title.localeCompare(b.title))
+            .map((p) => ({ title: p.title, blocks: p.blockCount })),
+        );
+      case 'list_templates':
+        return this.read(
+          (await this.pages.list(TEMPLATE_PREFIX, false, 200))
+            .filter((p) => p.title.startsWith(TEMPLATE_PREFIX))
+            .map((p) => ({ title: p.title, blocks: p.blockCount })),
+        );
       case 'create_page':
         return this.write(await this.pages.ensure(input.title));
+      case 'apply_template':
+        return this.write(await this.applyTemplate(input.template_title, input.page_title, input.parent_id ?? null, input.index));
+      case 'set_todo':
+        return this.write(await this.setTodo(input.id, input.state));
+      case 'set_block_collapsed': {
+        const block = await this.blocks.update(input.id, { open: !input.collapsed });
+        return this.write({ id: block.id, collapsed: !block.open });
+      }
       case 'insert_blocks':
         return this.write(await this.insertBlocks(input.page_title, input.parent_id ?? null, input.index, input.blocks));
       case 'update_block': {
@@ -83,6 +118,18 @@ export class NoteToolkit {
         return this.write(await this.addTags(input.title, input.tags));
       case 'link_unlinked_mentions':
         return this.write(await this.linkMentions(input.title, input.block_ids));
+      case 'list_trash':
+        return this.read(await this.trash.list(input.limit ?? 50));
+      case 'restore_from_trash': {
+        const restored = await this.trash.restore(input.id);
+        return { output: restored, mutated: true, createdPages: [restored.pageTitle] };
+      }
+      case 'delete_from_trash':
+        await this.trash.remove(input.id);
+        return this.write({ deleted: input.id });
+      case 'empty_trash':
+        await this.trash.clear();
+        return this.write({ emptied: true });
       default:
         throw new BadRequestException(`未知工具：${name}`);
     }
@@ -153,6 +200,26 @@ export class NoteToolkit {
     };
     await insert(blocks, parentId, index);
     return { page: page.title, created };
+  }
+
+  private async applyTemplate(templateTitle: string, pageTitle: string, parentId: string | null, index: number | undefined) {
+    const template = await this.pages.detail(templateTitle);
+    if (!template.page) throw new NotFoundException(`模板「${templateTitle}」不存在`);
+    if (template.blocks.length === 0) throw new BadRequestException(`模板「${templateTitle}」是空的`);
+    const tree = (parent: string | null): NewBlock[] =>
+      template.blocks
+        .filter((b) => b.parentId === parent)
+        .sort((a, b) => a.position - b.position)
+        .map((b) => ({ content: b.content, children: tree(b.id) }));
+    return this.insertBlocks(pageTitle, parentId, index, tree(null));
+  }
+
+  private async setTodo(id: string, state: 'todo' | 'done' | 'none') {
+    const block = await this.blocks.get(id);
+    const text = block.content.replace(TODO_PREFIX, '');
+    const content = state === 'todo' ? `[ ] ${text}` : state === 'done' ? `[x] ${text}` : text;
+    const updated = content === block.content ? block : await this.blocks.update(id, { content });
+    return { id: updated.id, content: updated.content };
   }
 
   private async addTags(title: string, tags: string[]) {

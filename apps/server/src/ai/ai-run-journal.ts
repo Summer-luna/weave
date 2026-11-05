@@ -5,6 +5,7 @@ import { titleKey } from '../common/title';
 import { PageService } from '../pages/page.service';
 import { DatabaseService } from '../storage/database.service';
 import { PageRepository } from '../storage/page.repository';
+import { TrashService } from '../trash/trash.service';
 
 interface PageSnapshot {
   pageId: string | null;
@@ -19,7 +20,17 @@ interface RunRecord {
   undone: boolean;
 }
 
-const READ_ONLY_TOOLS = new Set(['search_pages', 'search_notes', 'search_blocks', 'read_page', 'read_block']);
+const READ_ONLY_TOOLS = new Set([
+  'search_pages',
+  'search_notes',
+  'search_blocks',
+  'read_page',
+  'read_block',
+  'get_block_references',
+  'list_daily_notes',
+  'list_templates',
+  'list_trash',
+]);
 const RUN_TTL_MS = 24 * 60 * 60_000;
 
 /** Remembers how every page an AI run touched looked before its first change, so the whole run can be undone. */
@@ -33,11 +44,21 @@ export class AiRunJournal {
     private readonly blocks: BlockService,
     private readonly restorer: OutlineRestorer,
     private readonly database: DatabaseService,
+    private readonly trash: TrashService,
   ) {}
 
   async beforeTool(runId: string, tool: string, input: Record<string, any>): Promise<void> {
     if (READ_ONLY_TOOLS.has(tool)) return;
     for (const title of await this.affectedTitles(tool, input)) await this.capture(runId, title);
+  }
+
+  /** Pages a tool created under a title that could not be predicted beforehand are removed again on undo. */
+  afterTool(runId: string, createdPages: string[] = []): void {
+    const run = this.runs.get(runId);
+    for (const title of createdPages) {
+      const key = titleKey(title);
+      if (run && !run.snapshots.has(key)) run.snapshots.set(key, { pageId: null, title, starred: false, blocks: [] });
+    }
   }
 
   hasChanges(runId: string): boolean {
@@ -93,9 +114,14 @@ export class AiRunJournal {
       case 'update_block':
       case 'move_block':
       case 'delete_block':
+      case 'set_todo':
+      case 'set_block_collapsed':
         return titlesOfBlocks([input.id]);
       case 'insert_blocks':
+      case 'apply_template':
         return [input.page_title];
+      case 'restore_from_trash':
+        return [(await this.trash.describe(input.id)).pageTitle];
       case 'rename_page':
         return [input.title, input.new_title];
       case 'link_unlinked_mentions': {

@@ -6,6 +6,7 @@ import { PageService } from '../pages/page.service';
 import { BlockRepository } from '../storage/block.repository';
 import { DatabaseService } from '../storage/database.service';
 import { PageRepository } from '../storage/page.repository';
+import { TrashRow } from '../storage/rows';
 import { TrashRepository } from '../storage/trash.repository';
 import { RestoreResultDto } from './dto/restore-result.dto';
 import { TrashItemDto } from './dto/trash-item.dto';
@@ -22,15 +23,13 @@ export class TrashService {
   ) {}
 
   async list(limit = 200): Promise<TrashItemDto[]> {
-    const rows = await this.trash.list(limit);
-    return rows.map((row) => ({
-      id: row.id,
-      kind: row.kind,
-      label: row.label,
-      pageTitle: row.pageTitle,
-      blockCount: row.payload.blocks.length,
-      deletedAt: row.deletedAt.toISOString(),
-    }));
+    return (await this.trash.list(limit)).map((row) => this.toDto(row));
+  }
+
+  async describe(id: string): Promise<TrashItemDto> {
+    const entry = await this.trash.find(id);
+    if (!entry) throw new NotFoundException('回收站里没有这一项');
+    return this.toDto(entry);
   }
 
   async restore(id: string): Promise<RestoreResultDto> {
@@ -62,6 +61,17 @@ export class TrashService {
 
   clear(): Promise<void> {
     return this.trash.clear();
+  }
+
+  private toDto(row: TrashRow): TrashItemDto {
+    return {
+      id: row.id,
+      kind: row.kind,
+      label: row.label,
+      pageTitle: row.pageTitle,
+      blockCount: row.payload.blocks.length,
+      deletedAt: row.deletedAt.toISOString(),
+    };
   }
 
   private async freeTitle(title: string): Promise<string> {
