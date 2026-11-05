@@ -298,6 +298,15 @@ body {
   @apply mt-3;
 }
 
+.block-content .md-heading::after {
+  content: 'H' attr(data-level);
+  @apply ml-2 inline-block rounded border border-line px-1 align-middle font-sans text-[10px] leading-[15px] font-medium tracking-normal text-muted/70 transition select-none;
+}
+
+.block-row:hover > .block-body .md-heading::after {
+  @apply border-muted/40 text-muted;
+}
+
 .cm-wv-hmark {
   @apply font-normal text-muted/70;
 }

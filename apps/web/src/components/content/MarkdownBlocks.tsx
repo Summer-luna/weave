@@ -36,7 +36,7 @@ function MarkdownBlockView({ block, depth, lead, onToggleTask }: { block: MdBloc
     case 'heading': {
       const Tag = `h${Math.min(block.level, 6)}` as 'h1';
       return (
-        <Tag className={`md-heading md-h${block.level}`}>
+        <Tag className={`md-heading md-h${block.level}`} data-level={block.level}>
           {lead}
           <InlineTokens tokens={block.tokens} depth={depth} />
         </Tag>
