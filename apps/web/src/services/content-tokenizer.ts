@@ -6,6 +6,7 @@ export type Token =
   | { type: 'bold'; children: Token[] }
   | { type: 'italic'; children: Token[] }
   | { type: 'highlight'; children: Token[] }
+  | { type: 'strike'; children: Token[] }
   | { type: 'code'; text: string }
   | { type: 'url'; href: string }
   | { type: 'image'; alt: string; src: string }
@@ -19,7 +20,9 @@ export interface TokenizedContent {
 
 const TODO_PREFIX = /^\[( |x|X)\] /;
 const INLINE =
-  /(`[^`\n]+`)|!\[([^\]\n]*)\]\(((?:https?:\/\/|\/)[^)\s]+)\)|\[([^[\]\n]+)\]\(((?:https?:\/\/|\/)[^)\s]+)\)|#\[\[([^[\]]+)\]\]|\[\[([^[\]]+)\]\]|\(\(([A-Za-z0-9_-]{6,24})\)\)|\*\*(.+?)\*\*|__(.+?)__|\^\^(.+?)\^\^|(https?:\/\/[^\s<>()]+)|(?<=^|[\s(（：，、；])#([\p{L}\p{N}_\-/]+)|(\n)/gu;
+  /(`[^`\n]+`)|!\[([^\]\n]*)\]\(((?:https?:\/\/|\/)[^)\s]+)\)|\[([^[\]\n]+)\]\(((?:https?:\/\/|\/)[^)\s]+)\)|#\[\[([^[\]]+)\]\]|\[\[([^[\]]+)\]\]|\(\(([A-Za-z0-9_-]{6,24})\)\)|\*\*(.+?)\*\*|__(.+?)__|\^\^(.+?)\^\^|==(?=\S)(.+?)(?<=\S)==|~~(?=\S)(.+?)(?<=\S)~~|(?<![A-Za-z0-9*])\*(?![\s*])([^*\n]+?)(?<![\s*])\*(?![A-Za-z0-9*])|(https?:\/\/[^\s<>()]+)|(?<=^|[\s(（：，、；])#([\p{L}\p{N}_\-/]+)|(\n)/gu;
+const MARKDOWN_LINE_PREFIX = /^[ \t]*(?:#{1,6}[ \t]+|>[ \t]?|(?:[-*+]|\d+[.)])[ \t]+(?:\[[ xX]\][ \t]+)?)/gm;
+const FENCE_LINE = /^[ \t]*(?:```|~~~).*(?:\n|$)/gm;
 export const TAG_SAFE_TITLE = /^[\p{L}\p{N}_\-/]+$/u;
 
 export class ContentTokenizer {
@@ -30,7 +33,7 @@ export class ContentTokenizer {
   }
 
   plainText(content: string): string {
-    return this.flatten(this.tokenize(content).tokens);
+    return this.flatten(this.tokenize(content.replace(MARKDOWN_LINE_PREFIX, '').replace(FENCE_LINE, '')).tokens);
   }
 
   toggleTodo(content: string): string {
@@ -40,14 +43,14 @@ export class ContentTokenizer {
     return content.slice(match[0].length);
   }
 
-  private inline(text: string): Token[] {
+  inline(text: string): Token[] {
     const tokens: Token[] = [];
     let last = 0;
     for (const match of text.matchAll(INLINE)) {
       const start = match.index ?? 0;
       if (start > last) tokens.push({ type: 'text', text: text.slice(last, start) });
       last = start + match[0].length;
-      const [, code, imageAlt, imageSrc, linkText, linkHref, bracketTag, link, ref, bold, italic, highlight, url, tag] = match;
+      const [, code, imageAlt, imageSrc, linkText, linkHref, bracketTag, link, ref, bold, italic, highlight, markHighlight, strike, starItalic, url, tag] = match;
       if (code) tokens.push({ type: 'code', text: code.slice(1, -1) });
       else if (imageSrc) tokens.push({ type: 'image', alt: imageAlt ?? '', src: imageSrc });
       else if (linkHref) tokens.push({ type: 'link', text: linkText, href: linkHref });
@@ -55,8 +58,9 @@ export class ContentTokenizer {
       else if (link) tokens.push({ type: 'pageLink', title: link });
       else if (ref) tokens.push({ type: 'blockRef', id: ref });
       else if (bold) tokens.push({ type: 'bold', children: this.inline(bold) });
-      else if (italic) tokens.push({ type: 'italic', children: this.inline(italic) });
-      else if (highlight) tokens.push({ type: 'highlight', children: this.inline(highlight) });
+      else if (italic ?? starItalic) tokens.push({ type: 'italic', children: this.inline(italic ?? starItalic) });
+      else if (highlight ?? markHighlight) tokens.push({ type: 'highlight', children: this.inline(highlight ?? markHighlight) });
+      else if (strike) tokens.push({ type: 'strike', children: this.inline(strike) });
       else if (url) tokens.push({ type: 'url', href: url });
       else if (tag) tokens.push({ type: 'tag', title: tag });
       else tokens.push({ type: 'lineBreak' });

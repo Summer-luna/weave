@@ -108,7 +108,7 @@ export const BlockItem = memo(function BlockItem({ id }: { id: string }) {
               onClick={(event) => (event.shiftKey ? actions.selectTo(id) : actions.focusOn(id, 'end'))}
             >
               {node.content ? (
-                <RichContent content={node.content} onToggleTodo={() => actions.toggleTodo(id)} />
+                <RichContent content={node.content} onToggleTodo={() => actions.toggleTodo(id)} onToggleTask={(line) => actions.toggleTask(id, line)} />
               ) : (
                 <span className="placeholder">&nbsp;</span>
               )}

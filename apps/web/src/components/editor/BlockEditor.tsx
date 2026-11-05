@@ -7,7 +7,7 @@ import type { AutocompleteSources } from '../../controllers/use-autocomplete-sou
 import type { Caret } from '../../types/models';
 import { activeEditorRegistry } from './active-editor-registry';
 import { pickFiles, toggleTodo } from './editor-commands';
-import { bracketPairing, completionSources, editorTheme, syntaxHighlight } from './editor-extensions';
+import { bracketPairing, completionSources, editorTheme, markdownLines, syntaxHighlight } from './editor-extensions';
 
 export interface EditorHandlers {
   onChange(content: string): void;
@@ -158,6 +158,7 @@ export function BlockEditor({ initialContent, content, caret, focusSeq, sources,
           }),
           bracketPairing,
           syntaxHighlight,
+          markdownLines,
           editorTheme,
           EditorView.updateListener.of((update) => {
             // Mid-composition text is unconfirmed pinyin; report only what the IME commits.

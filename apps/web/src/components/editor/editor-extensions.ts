@@ -1,17 +1,22 @@
 import { Completion, CompletionContext, CompletionResult, startCompletion } from '@codemirror/autocomplete';
-import { Extension } from '@codemirror/state';
-import { Decoration, EditorView, MatchDecorator, ViewPlugin, ViewUpdate } from '@codemirror/view';
+import { Extension, RangeSetBuilder } from '@codemirror/state';
+import { Decoration, DecorationSet, EditorView, MatchDecorator, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import type { AutocompleteSources } from '../../controllers/use-autocomplete-sources';
 import { TAG_SAFE_TITLE } from '../../services/content-tokenizer';
 
 const SYNTAX = new MatchDecorator({
-  regexp: /(#?\[\[[^[\]\n]*\]\])|(\(\([A-Za-z0-9_-]*\)\))|((?<=^|[\s(（：，、；])#[\p{L}\p{N}_\-/]+)|(\*\*[^*\n]+\*\*)|(`[^`\n]+`)/gu,
+  regexp:
+    /(#?\[\[[^[\]\n]*\]\])|(\(\([A-Za-z0-9_-]*\)\))|((?<=^|[\s(（：，、；])#[\p{L}\p{N}_\-/]+)|(\*\*[^*\n]+\*\*)|(`[^`\n]+`)|(~~[^~\n]+~~)|(__[^_\n]+__|(?<![A-Za-z0-9*])\*(?![\s*])[^*\n]+?(?<![\s*])\*(?![A-Za-z0-9*]))|(\^\^[^^\n]+\^\^|==[^=\n]+==)|(^#{1,6}[ \t])/gmu,
   decoration: (match) => {
     if (match[1]) return Decoration.mark({ class: 'cm-wv-link' });
     if (match[2]) return Decoration.mark({ class: 'cm-wv-ref' });
     if (match[3]) return Decoration.mark({ class: 'cm-wv-tag' });
     if (match[4]) return Decoration.mark({ class: 'cm-wv-bold' });
-    return Decoration.mark({ class: 'cm-wv-code' });
+    if (match[5]) return Decoration.mark({ class: 'cm-wv-code' });
+    if (match[6]) return Decoration.mark({ class: 'cm-wv-strike' });
+    if (match[7]) return Decoration.mark({ class: 'cm-wv-italic' });
+    if (match[8]) return Decoration.mark({ class: 'cm-wv-mark' });
+    return Decoration.mark({ class: 'cm-wv-hmark' });
   },
 });
 
@@ -23,6 +28,40 @@ export const syntaxHighlight = ViewPlugin.fromClass(
     }
     update(update: ViewUpdate) {
       this.decorations = SYNTAX.updateDeco(update, this.decorations);
+    }
+  },
+  { decorations: (v) => v.decorations },
+);
+
+const HEADING_LINE = /^(#{1,6})[ \t]/;
+const QUOTE_LINE = /^[ \t]*>/;
+const FENCE_LINE = /^[ \t]*(?:```|~~~)/;
+
+function lineDecorations(view: EditorView): DecorationSet {
+  const builder = new RangeSetBuilder<Decoration>();
+  let inFence = false;
+  for (let n = 1; n <= view.state.doc.lines; n++) {
+    const line = view.state.doc.line(n);
+    const fence = FENCE_LINE.test(line.text);
+    const heading = HEADING_LINE.exec(line.text);
+    let cls: string | null = null;
+    if (fence || inFence) cls = 'cm-wv-codeline';
+    else if (heading) cls = `cm-wv-h${Math.min(heading[1].length, 4)}`;
+    else if (QUOTE_LINE.test(line.text)) cls = 'cm-wv-quote';
+    if (fence) inFence = !inFence;
+    if (cls) builder.add(line.from, line.from, Decoration.line({ class: cls }));
+  }
+  return builder.finish();
+}
+
+export const markdownLines = ViewPlugin.fromClass(
+  class {
+    decorations;
+    constructor(view: EditorView) {
+      this.decorations = lineDecorations(view);
+    }
+    update(update: ViewUpdate) {
+      if (update.docChanged) this.decorations = lineDecorations(update.view);
     }
   },
   { decorations: (v) => v.decorations },
@@ -80,6 +119,18 @@ function replaceWith(view: EditorView, from: number, to: number, text: string, c
 
 function slashCommands(sources: AutocompleteSources): SlashCommand[] {
   const wrap = (open: string, close: string) => (view: EditorView, from: number, to: number) => replaceWith(view, from, to, open + close, open.length);
+  const linePrefix = (prefix: string) => (view: EditorView, from: number, to: number) => {
+    const line = view.state.doc.lineAt(from);
+    const existing = /^(?:#{1,6}[ \t]+|>[ \t]?)/.exec(line.text)?.[0] ?? '';
+    view.dispatch({
+      changes: [
+        { from, to, insert: '' },
+        { from: line.from, to: line.from + existing.length, insert: prefix },
+      ],
+      selection: { anchor: from - existing.length + prefix.length },
+      userEvent: 'input.complete',
+    });
+  };
   const dateLink = (offset: number) => (view: EditorView, from: number, to: number) => replaceWith(view, from, to, `[[${sources.dateTitle(offset)}]]`);
   return [
     {
@@ -104,6 +155,19 @@ function slashCommands(sources: AutocompleteSources): SlashCommand[] {
     { name: '斜体', keywords: 'italic xieti xt', detail: '__', run: wrap('__', '__') },
     { name: '高亮', keywords: 'highlight gaoliang gl', detail: '^^', run: wrap('^^', '^^') },
     { name: '代码', keywords: 'code daima dm', detail: '`', run: wrap('`', '`') },
+    { name: '标题 1', keywords: 'h1 heading biaoti bt', detail: '#', run: linePrefix('# ') },
+    { name: '标题 2', keywords: 'h2 heading biaoti bt', detail: '##', run: linePrefix('## ') },
+    { name: '标题 3', keywords: 'h3 heading biaoti bt', detail: '###', run: linePrefix('### ') },
+    { name: '引用', keywords: 'quote yinyong yy', detail: '>', run: linePrefix('> ') },
+    { name: '删除线', keywords: 'strike shanchuxian scx', detail: '~~', run: wrap('~~', '~~') },
+    { name: '代码块', keywords: 'codeblock daimakuai dmk', detail: '```', run: (view, from, to) => replaceWith(view, from, to, '```\n\n```', 4) },
+    { name: '分割线', keywords: 'divider hr fengexian fgx', detail: '---', run: (view, from, to) => replaceWith(view, from, to, '---') },
+    {
+      name: '表格',
+      keywords: 'table biaoge bg',
+      detail: '| |',
+      run: (view, from, to) => replaceWith(view, from, to, '| 列 1 | 列 2 |\n| --- | --- |\n|  |  |', 2),
+    },
   ];
 }
 

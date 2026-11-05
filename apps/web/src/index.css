@@ -244,7 +244,145 @@ body {
   @apply mr-2 h-[15px] w-[15px] translate-y-[2px] cursor-pointer accent-accent;
 }
 
+/* Markdown blocks */
+
+.md-content {
+  @apply whitespace-normal;
+}
+
+.md-content > * + *,
+.md-quote > * + * {
+  @apply mt-1;
+}
+
+.md-paragraph {
+  @apply whitespace-pre-wrap;
+}
+
+.md-heading,
+.cm-wv-h1,
+.cm-wv-h2,
+.cm-wv-h3,
+.cm-wv-h4 {
+  @apply font-semibold tracking-tight text-ink;
+}
+
+.md-h1,
+.cm-wv-h1 {
+  @apply text-[1.6em] leading-[1.35];
+}
+
+.md-h2,
+.cm-wv-h2 {
+  @apply text-[1.3em] leading-[1.4];
+}
+
+.md-h3,
+.cm-wv-h3 {
+  @apply text-[1.12em] leading-[1.5];
+}
+
+.md-h4,
+.md-h5,
+.md-h6,
+.cm-wv-h4 {
+  @apply text-[1em];
+}
+
+.md-h5,
+.md-h6 {
+  @apply text-muted;
+}
+
+.md-content > .md-heading:not(:first-child) {
+  @apply mt-3;
+}
+
+.cm-wv-hmark {
+  @apply font-normal text-muted/70;
+}
+
+.block-row:has(> .block-body :is(.md-content > :is(.md-h1, .md-h2):first-child, .cm-content > :is(.cm-wv-h1, .cm-wv-h2):first-child)) {
+  .block-bullet {
+    @apply mt-[4px];
+  }
+
+  .block-toggle {
+    @apply mt-[6px];
+  }
+}
+
+.md-quote,
+.cm-wv-quote {
+  @apply border-l-[3px] border-accent/35 pl-3 text-ink/80;
+}
+
+.md-code {
+  @apply relative overflow-x-auto rounded-lg border border-line bg-ink/[0.045] px-3 py-2 font-mono text-[0.86em] leading-relaxed whitespace-pre text-ink;
+}
+
+.md-code-lang {
+  @apply absolute top-1 right-2 font-sans text-[10px] tracking-wide text-muted uppercase select-none;
+}
+
+.md-hr {
+  @apply my-2.5 border-0 border-t border-line;
+}
+
+.md-list-item {
+  @apply flex items-start;
+}
+
+.md-list-marker {
+  @apply mr-2 min-w-[1em] shrink-0 text-center text-muted tabular-nums;
+}
+
+.md-task-box {
+  @apply mt-[0.3em] translate-y-0;
+}
+
+.md-task-done > span {
+  @apply text-muted line-through decoration-1;
+}
+
+.md-strike,
+.cm-wv-strike {
+  @apply text-muted line-through decoration-1;
+}
+
+.md-table-wrap {
+  @apply max-w-full overflow-x-auto;
+}
+
+.md-table {
+  @apply border-collapse text-[0.94em];
+}
+
+.md-table th,
+.md-table td {
+  @apply border border-line px-2.5 py-1 align-top;
+}
+
+.md-table th {
+  @apply bg-ink/[0.04] text-left font-semibold;
+}
+
 /* CodeMirror marks */
+
+.cm-wv-codeline {
+  font-family: ui-monospace, monospace;
+  font-size: 0.88em;
+  background: color-mix(in srgb, var(--color-ink) 4.5%, transparent);
+}
+
+.cm-wv-italic {
+  font-style: italic;
+}
+
+.cm-wv-mark {
+  background: var(--color-amber-soft);
+  border-radius: 3px;
+}
 
 .cm-wv-link {
   color: var(--color-accent);

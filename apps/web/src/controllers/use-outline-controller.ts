@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { blockService } from '../services/block-service';
 import { contentTokenizer } from '../services/content-tokenizer';
+import { markdownBlockParser } from '../services/markdown-block-parser';
 import { historyStore } from '../services/history-store';
 import { outlineService, ParsedBlock } from '../services/outline-service';
 import { pageService } from '../services/page-service';
@@ -27,6 +28,7 @@ export interface OutlineActions {
   focusNext(id: string): void;
   toggleOpen(id: string): void;
   toggleTodo(id: string): void;
+  toggleTask(id: string, line: number): void;
   insertTemplate(id: string, templateTitle: string): Promise<void>;
   pasteOutline(id: string, text: string): boolean;
   undo(): void;
@@ -436,6 +438,16 @@ export function useOutlineController(title: string, zoomId?: string) {
         const node = o.nodes[id];
         if (!node) return;
         const content = contentTokenizer.toggleTodo(node.content);
+        commit(outlineService.update(o, id, { content }));
+        saveContent(id, content, 0);
+      },
+
+      toggleTask(id, line) {
+        const o = outline();
+        const node = o.nodes[id];
+        if (!node) return;
+        const content = markdownBlockParser.toggleTask(node.content, line);
+        if (content === node.content) return;
         commit(outlineService.update(o, id, { content }));
         saveContent(id, content, 0);
       },
