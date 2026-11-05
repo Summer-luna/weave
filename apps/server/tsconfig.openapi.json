@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": { "outDir": "./.openapi-build", "sourceMap": false }
+}

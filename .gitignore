@@ -1,0 +1,14 @@
+node_modules/
+dist/
+dist-test/
+apps/server/data/
+*.log
+.DS_Store
+.pgdata/
+apps/server/.openapi-build/
+.env
+*.env
+!.env.example
+*.dump
+*.zip
+.idea/
