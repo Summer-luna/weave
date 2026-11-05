@@ -95,7 +95,11 @@ body {
 /* Outline */
 
 .outline-tree {
-  @apply text-[15.5px] leading-[1.7];
+  @apply -ml-[23px] text-[15.5px] leading-[1.7];
+}
+
+.sidebar-panel .outline-tree {
+  @apply ml-0;
 }
 
 .outline-tree.zoomed > .block > .block-row {
@@ -251,11 +255,11 @@ body {
 }
 
 .reference-bullet {
-  @apply -m-1.5 flex shrink-0 rounded-full p-1.5 hover:bg-black/5;
+  @apply -mx-1.5 mt-[3px] flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-full hover:bg-black/5;
 }
 
 .reference-dot {
-  @apply mt-[11px] h-[5px] w-[5px] shrink-0 rounded-full bg-ink/40;
+  @apply h-[5px] w-[5px] shrink-0 rounded-full bg-ink/40;
 }
 
 .link-mention {

@@ -87,7 +87,7 @@ export function AppShell() {
           onSearch={() => setSearching(true)}
         />
         <main className="min-h-0 flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-3xl px-4 pt-5 pb-40 md:px-10 md:pt-8">
+          <div className="mx-auto max-w-3xl px-7 pt-5 pb-40 md:px-10 md:pt-8">
             <Outlet />
           </div>
         </main>
