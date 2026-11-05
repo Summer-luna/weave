@@ -46,7 +46,7 @@ function SidebarPanel({ item, onClose }: { item: SidebarItem; onClose(): void })
       <header className="mb-2 flex items-center gap-2 text-xs text-muted">
         {item.kind === 'page' ? <FileText size={13} /> : <Text size={13} />}
         <span className="flex-1 truncate">{item.kind === 'page' ? '页面' : '块'}</span>
-        <button type="button" className="rounded p-0.5 hover:bg-black/5 hover:text-ink" onClick={onClose} title="关闭">
+        <button type="button" className="rounded p-0.5 hover:bg-ink/5 hover:text-ink" onClick={onClose} title="关闭">
           <X size={14} />
         </button>
       </header>

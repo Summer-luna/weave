@@ -201,7 +201,7 @@ export const editorTheme = EditorView.theme({
     border: '1px solid var(--color-line)',
     borderRadius: '10px',
     backgroundColor: 'var(--color-panel)',
-    boxShadow: '0 12px 32px -12px rgb(30 40 40 / 0.35)',
+    boxShadow: '0 12px 32px -12px var(--color-shadow)',
     overflow: 'hidden',
     padding: '4px',
   },

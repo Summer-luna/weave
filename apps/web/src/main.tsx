@@ -6,6 +6,9 @@ import './index.css';
 import { ApiError } from './repositories/api-client';
 import { router } from './router';
 import { saveQueue } from './services/save-queue';
+import { themeStore } from './services/theme-store';
+
+themeStore.apply();
 
 const queryClient = new QueryClient({
   defaultOptions: {

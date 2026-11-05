@@ -45,7 +45,7 @@ export function AiToolStepRow({ step, onConfirm }: AiToolStepRowProps) {
         <span className={clsx('truncate', step.status === 'error' && 'text-danger')}>{label}</span>
       </button>
       {expanded && step.output && (
-        <pre className="mt-1 max-h-48 overflow-auto rounded-md bg-black/[0.04] p-2 text-[11px] leading-snug whitespace-pre-wrap">{step.output}</pre>
+        <pre className="mt-1 max-h-48 overflow-auto rounded-md bg-ink/[0.05] p-2 text-[11px] leading-snug whitespace-pre-wrap">{step.output}</pre>
       )}
     </li>
   );

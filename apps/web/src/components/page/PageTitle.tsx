@@ -53,7 +53,7 @@ export function PageTitle({ title, error, busy, starred, onRename, onToggleStar,
         <button
           type="button"
           onClick={onToggleStar}
-          className={clsx('rounded-md p-1.5 transition hover:bg-black/5', starred ? 'text-amber' : 'text-muted opacity-0 group-hover:opacity-100 pointer-coarse:opacity-100')}
+          className={clsx('rounded-md p-1.5 transition hover:bg-ink/5', starred ? 'text-amber' : 'text-muted opacity-0 group-hover:opacity-100 pointer-coarse:opacity-100')}
           title={starred ? '取消收藏' : '收藏到左侧栏'}
         >
           <Star size={20} fill={starred ? 'currentColor' : 'none'} />

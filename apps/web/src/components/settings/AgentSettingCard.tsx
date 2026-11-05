@@ -80,7 +80,7 @@ export function AgentSettingCard({ setting, onSave, onTest }: AgentSettingCardPr
         <span
           className={clsx(
             'flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs',
-            setting.configured ? 'bg-accent-soft text-accent' : 'bg-black/5 text-muted',
+            setting.configured ? 'bg-accent-soft text-accent' : 'bg-ink/5 text-muted',
           )}
         >
           {setting.configured ? <CheckCircle2 size={13} /> : <CircleDashed size={13} />}

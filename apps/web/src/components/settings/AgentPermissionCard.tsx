@@ -34,7 +34,7 @@ export function AgentPermissionCard({ level, saving, failed, onChange }: AgentPe
             onClick={() => onChange(value)}
             className={clsx(
               'rounded-lg border px-3 py-2.5 text-left transition-colors disabled:cursor-default',
-              level === value ? 'border-accent bg-accent-soft' : 'border-line hover:bg-black/5',
+              level === value ? 'border-accent bg-accent-soft' : 'border-line hover:bg-ink/5',
             )}
           >
             <span className={clsx('flex items-center gap-1.5 text-sm font-medium', level === value ? 'text-accent' : 'text-ink')}>

@@ -135,7 +135,7 @@ export function AiPanel() {
               type="button"
               disabled={ai.running}
               onClick={() => ai.setScope(scope)}
-              className={clsx('rounded-full px-2 py-0.5', ai.scope === scope ? 'bg-accent text-white' : 'text-muted hover:bg-black/5')}
+              className={clsx('rounded-full px-2 py-0.5', ai.scope === scope ? 'bg-accent text-white' : 'text-muted hover:bg-ink/5')}
             >
               {scope === 'page' ? '当前页' : '全库'}
             </button>
