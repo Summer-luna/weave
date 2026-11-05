@@ -29,6 +29,14 @@
   --color-amber-soft: #fff4cc;
   --color-danger: #e5484d;
   --color-shadow: rgb(20 30 50 / 0.18);
+  --md-heading: #2f7cf6;
+  --md-bold: #e8467c;
+  --md-italic: #1a9e8f;
+  --md-quote-bar: #2f7cf6;
+  --md-tag: #23863f;
+  --md-tag-bg: #e3f5e8;
+  --md-highlight: #fff1a8;
+  --md-bullet: #c3c7cd;
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei UI', system-ui, sans-serif;
 }
 
@@ -46,6 +54,14 @@
   --color-amber-soft: #463a16;
   --color-danger: #ff6b6b;
   --color-shadow: rgb(0 0 0 / 0.6);
+  --md-heading: #5aa5ff;
+  --md-bold: #ff6f9c;
+  --md-italic: #4fd1c0;
+  --md-quote-bar: #4c9aff;
+  --md-tag: #5fd47e;
+  --md-tag-bg: #1d3a27;
+  --md-highlight: #5a4a12;
+  --md-bullet: #5b5f66;
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei UI', system-ui, sans-serif;
 }
 
@@ -536,4 +552,60 @@ body {
 
 .block-row.selected .block-content {
   @apply cursor-default select-none;
+}
+
+/* Things themes: Markdown colors */
+
+:root[data-theme^='things'] {
+  :is(.md-heading, .cm-wv-h1, .cm-wv-h2, .cm-wv-h3, .cm-wv-h4) {
+    color: var(--md-heading);
+  }
+
+  :is(.md-content, .block-content) strong,
+  .cm-wv-bold {
+    color: var(--md-bold);
+  }
+
+  :is(.md-content, .block-content) em,
+  .cm-wv-italic {
+    color: var(--md-italic);
+  }
+
+  .md-quote,
+  .cm-wv-quote {
+    border-left-color: var(--md-quote-bar);
+  }
+
+  .tag-link,
+  .cm-wv-tag {
+    color: var(--md-tag);
+    background: var(--md-tag-bg);
+  }
+
+  .tag-link {
+    @apply rounded-full px-2 py-px;
+  }
+
+  .tag-link:hover {
+    background: color-mix(in srgb, var(--md-tag) 22%, var(--md-tag-bg));
+  }
+
+  .page-link,
+  .url-link {
+    @apply underline decoration-accent/40 underline-offset-[3px];
+  }
+
+  .highlight,
+  .cm-wv-mark {
+    background: var(--md-highlight);
+  }
+
+  .block-bullet > span,
+  .reference-dot {
+    background: var(--md-bullet);
+  }
+
+  .md-list-marker {
+    color: var(--md-bullet);
+  }
 }
