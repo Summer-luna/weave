@@ -69,8 +69,34 @@ export const markdownLines = ViewPlugin.fromClass(
 
 const PAIRS: Record<string, string> = { '[': ']]', '(': '))' };
 
+// A Chinese keyboard types [ as 【, so 【 opens a link too, but only when it is clearly meant as one:
+// over a selection, or as the second of 【【. A lone 【 stays Chinese punctuation.
+const OPEN_LINK = new Set(['[', '【']);
+
+/** Selected text + [ wraps it as [text]; a second [ makes it [[text]], a page link, like Roam. */
+function wrapSelection(view: EditorView, from: number, to: number): boolean {
+  const doc = view.state.doc;
+  const selected = doc.sliceString(from, to);
+  const insideSingle = doc.sliceString(from - 1, from) === '[' && doc.sliceString(to, to + 1) === ']';
+  const start = insideSingle ? from - 1 : from;
+  const insert = insideSingle ? `[[${selected}]]` : `[${selected}]`;
+  const anchor = start + (insideSingle ? 2 : 1);
+  view.dispatch({
+    changes: { from: start, to: insideSingle ? to + 1 : to, insert },
+    selection: { anchor, head: anchor + selected.length },
+    userEvent: 'input.type',
+  });
+  return true;
+}
+
 export const bracketPairing: Extension = EditorView.inputHandler.of((view, from, to, text) => {
   const doc = view.state.doc;
+  if (OPEN_LINK.has(text) && from !== to && !doc.sliceString(from, to).includes('\n')) return wrapSelection(view, from, to);
+  if (text === '【' && from === to && doc.sliceString(from - 1, from) === '【') {
+    view.dispatch({ changes: { from: from - 1, to, insert: '[[]]' }, selection: { anchor: from + 1 }, userEvent: 'input.type' });
+    startCompletion(view);
+    return true;
+  }
   if ((text === ']' || text === ')') && from === to && doc.sliceString(from, from + 1) === text) {
     view.dispatch({ selection: { anchor: from + 1 } });
     return true;
