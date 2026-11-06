@@ -87,6 +87,23 @@ export const bracketPairing: Extension = EditorView.inputHandler.of((view, from,
   return true;
 });
 
+// A Chinese keyboard types [] as 【】, so both count.
+const EMPTY_BOX = /^((?:[ \t]*>[ \t]?)*[ \t]*(?:[-*+]|\d{1,9}[.)])[ \t]+)?(?:\[\]|【】)$/;
+
+export const todoShortcut: Extension = EditorView.inputHandler.of((view, from, to, text) => {
+  if (text !== ' ' || from !== to || view.composing) return false;
+  const line = view.state.doc.lineAt(from);
+  const match = EMPTY_BOX.exec(view.state.doc.sliceString(line.from, from));
+  if (!match || (!match[1] && line.number !== 1)) return false;
+  const insert = `${match[1] ?? ''}[ ] `;
+  view.dispatch({
+    changes: { from: line.from, to: from, insert },
+    selection: { anchor: line.from + insert.length },
+    userEvent: 'input.type',
+  });
+  return true;
+});
+
 function closeWith(view: EditorView, from: number, to: number, insert: string, closing: string) {
   const after = view.state.doc.sliceString(to, to + closing.length);
   const text = after === closing ? insert : insert + closing;
