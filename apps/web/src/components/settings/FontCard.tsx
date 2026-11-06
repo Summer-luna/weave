@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import type { ReactNode } from 'react';
 import type { CjkFont, CodeFont, FontSettings, LatinFont } from '../../types/font';
 
 interface FontOption<T> {
@@ -61,6 +62,15 @@ function FontRow<T extends string>({ label, sample, options, value, onChange }: 
   );
 }
 
+function FontGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="space-y-3 border-t border-line pt-4 first:border-t-0 first:pt-0">
+      <p className="text-sm font-semibold text-ink">{title}</p>
+      {children}
+    </div>
+  );
+}
+
 interface FontCardProps {
   fonts: FontSettings;
   onChange(patch: Partial<FontSettings>): void;
@@ -71,12 +81,20 @@ export function FontCard({ fonts, onChange }: FontCardProps) {
     <section className="rounded-xl border border-line bg-panel p-5">
       <header className="mb-4">
         <h3 className="text-base font-semibold text-ink">字体</h3>
-        <p className="mt-0.5 text-sm text-muted">中文、英文和代码分开选。字体都打包在应用里，不需要联网。</p>
+        <p className="mt-0.5 text-sm text-muted">界面是侧栏、顶栏、设置和 AI 面板等笔记以外的地方；笔记是页面标题和块内容。字体都打包在应用里，不需要联网。</p>
       </header>
-      <div className="space-y-4">
-        <FontRow label="中文" sample="温故知新" options={CJK} value={fonts.cjk} onChange={(cjk) => onChange({ cjk })} />
-        <FontRow label="英文" sample="Quick fox 0123" options={LATIN} value={fonts.latin} onChange={(latin) => onChange({ latin })} />
-        <FontRow label="代码" sample="x => [[a]];" options={CODE} value={fonts.code} onChange={(code) => onChange({ code })} />
+      <div className="space-y-5">
+        <FontGroup title="界面">
+          <FontRow label="中文" sample="温故知新" options={CJK} value={fonts.uiCjk} onChange={(uiCjk) => onChange({ uiCjk })} />
+          <FontRow label="英文" sample="Quick fox 0123" options={LATIN} value={fonts.uiLatin} onChange={(uiLatin) => onChange({ uiLatin })} />
+        </FontGroup>
+        <FontGroup title="笔记">
+          <FontRow label="中文" sample="温故知新" options={CJK} value={fonts.noteCjk} onChange={(noteCjk) => onChange({ noteCjk })} />
+          <FontRow label="英文" sample="Quick fox 0123" options={LATIN} value={fonts.noteLatin} onChange={(noteLatin) => onChange({ noteLatin })} />
+        </FontGroup>
+        <FontGroup title="代码">
+          <FontRow label="等宽" sample="x => [[a]];" options={CODE} value={fonts.code} onChange={(code) => onChange({ code })} />
+        </FontGroup>
       </div>
     </section>
   );

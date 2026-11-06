@@ -13,36 +13,59 @@
   --color-amber-soft: #f6e7c6;
   --color-danger: #b8463d;
   --color-shadow: rgb(30 40 40 / 0.35);
-  --font-sans: var(--font-latin), var(--font-cjk), system-ui, sans-serif;
+  --font-sans: var(--font-ui-latin), var(--font-ui-cjk), system-ui, sans-serif;
   --font-mono: var(--font-code), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 :root {
   --font-base-latin: 'Inter Variable', 'Inter';
   --font-base-cjk: 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei';
-  --font-latin: var(--font-base-latin);
-  --font-cjk: var(--font-base-cjk);
+  --font-ui-latin: var(--font-base-latin);
+  --font-ui-cjk: var(--font-base-cjk);
+  --font-note-latin: var(--font-base-latin);
+  --font-note-cjk: var(--font-base-cjk);
+  --font-note: var(--font-note-latin), var(--font-note-cjk), system-ui, sans-serif;
   --font-code: ui-monospace;
 }
 
-:root[data-font-latin='inter'] {
-  --font-latin: 'Inter Variable';
+:root[data-font-ui-latin='inter'] {
+  --font-ui-latin: 'Inter Variable';
 }
 
-:root[data-font-latin='ia-quattro'] {
-  --font-latin: 'iA Writer Quattro';
+:root[data-font-ui-latin='ia-quattro'] {
+  --font-ui-latin: 'iA Writer Quattro';
 }
 
-:root[data-font-latin='atkinson'] {
-  --font-latin: 'Atkinson Hyperlegible Next Variable';
+:root[data-font-ui-latin='atkinson'] {
+  --font-ui-latin: 'Atkinson Hyperlegible Next Variable';
 }
 
-:root[data-font-cjk='noto-sans-sc'] {
-  --font-cjk: 'Noto Sans SC Variable';
+:root[data-font-ui-cjk='noto-sans-sc'] {
+  --font-ui-cjk: 'Noto Sans SC Variable';
 }
 
-:root[data-font-cjk='lxgw-wenkai'] {
-  --font-cjk: 'LXGW WenKai';
+:root[data-font-ui-cjk='lxgw-wenkai'] {
+  --font-ui-cjk: 'LXGW WenKai';
+}
+
+:root[data-font-note-latin='inter'] {
+  --font-note-latin: 'Inter Variable';
+}
+
+:root[data-font-note-latin='ia-quattro'] {
+  --font-note-latin: 'iA Writer Quattro';
+}
+
+:root[data-font-note-latin='atkinson'] {
+  --font-note-latin: 'Atkinson Hyperlegible Next Variable';
+}
+
+:root[data-font-note-cjk='noto-sans-sc'] {
+  --font-note-cjk: 'Noto Sans SC Variable';
+}
+
+:root[data-font-note-cjk='lxgw-wenkai'] {
+  --font-note-cjk: 'LXGW WenKai';
 }
 
 :root[data-font-code='jetbrains-mono'] {
@@ -173,6 +196,13 @@ body {
 
 .sidebar-link.active {
   @apply bg-panel font-medium text-ink shadow-sm;
+}
+
+.page-title,
+.outline-tree,
+.reference-item,
+.md-content {
+  font-family: var(--font-note);
 }
 
 .page-title {

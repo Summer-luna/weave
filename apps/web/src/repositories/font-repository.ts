@@ -3,10 +3,10 @@ import type { FontSettings } from '../types/font';
 const STORAGE_KEY = 'weave.fonts';
 
 export class FontRepository {
-  load(): Partial<FontSettings> | null {
+  load(): Record<string, unknown> | null {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as Partial<FontSettings>) : null;
+      return raw ? (JSON.parse(raw) as Record<string, unknown>) : null;
     } catch {
       return null;
     }

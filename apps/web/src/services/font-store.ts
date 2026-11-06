@@ -27,16 +27,22 @@ export class FontStore {
 
   apply(): void {
     const { dataset } = document.documentElement;
-    dataset.fontLatin = this.settings.latin;
-    dataset.fontCjk = this.settings.cjk;
+    dataset.fontUiLatin = this.settings.uiLatin;
+    dataset.fontUiCjk = this.settings.uiCjk;
+    dataset.fontNoteLatin = this.settings.noteLatin;
+    dataset.fontNoteCjk = this.settings.noteCjk;
     dataset.fontCode = this.settings.code;
   }
 
-  private sanitize(saved: Partial<FontSettings>): FontSettings {
+  private sanitize(saved: Record<string, unknown>): FontSettings {
+    const latin = (value: unknown): LatinFont => (LATIN.includes(value as LatinFont) ? (value as LatinFont) : 'theme');
+    const cjk = (value: unknown): CjkFont => (CJK.includes(value as CjkFont) ? (value as CjkFont) : 'theme');
     return {
-      latin: saved.latin && LATIN.includes(saved.latin) ? saved.latin : 'theme',
-      cjk: saved.cjk && CJK.includes(saved.cjk) ? saved.cjk : 'theme',
-      code: saved.code && CODE.includes(saved.code) ? saved.code : 'system',
+      uiLatin: latin(saved.uiLatin ?? saved.latin),
+      uiCjk: cjk(saved.uiCjk ?? saved.cjk),
+      noteLatin: latin(saved.noteLatin ?? saved.latin),
+      noteCjk: cjk(saved.noteCjk ?? saved.cjk),
+      code: CODE.includes(saved.code as CodeFont) ? (saved.code as CodeFont) : 'system',
     };
   }
 }

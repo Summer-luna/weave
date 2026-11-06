@@ -5,7 +5,9 @@ export type CjkFont = 'theme' | 'noto-sans-sc' | 'lxgw-wenkai';
 export type CodeFont = 'system' | 'jetbrains-mono';
 
 export interface FontSettings {
-  latin: LatinFont;
-  cjk: CjkFont;
+  uiLatin: LatinFont;
+  uiCjk: CjkFont;
+  noteLatin: LatinFont;
+  noteCjk: CjkFont;
   code: CodeFont;
 }
