@@ -1,7 +1,7 @@
 import type { ThemeId } from '../types/theme';
 
 const STORAGE_KEY = 'weave.theme';
-const THEMES: ThemeId[] = ['paper', 'things-light', 'things-dark', 'system'];
+const THEMES: ThemeId[] = ['paper', 'roam', 'things-light', 'things-dark', 'system'];
 
 export class ThemeRepository {
   load(): ThemeId | null {

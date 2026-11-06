@@ -3,6 +3,7 @@ import type { ThemeId } from '../../types/theme';
 
 const THEMES: { id: ThemeId; title: string; description: string; swatches: string[] }[] = [
   { id: 'paper', title: '暖纸', description: '原来的米色纸张和墨绿强调色。', swatches: ['#f7f4ee', '#efebe3', '#1f6f69'] },
+  { id: 'roam', title: 'Roam', description: '纯白底、深灰正文、蓝色链接，细灰线标出缩进层级。', swatches: ['#ffffff', '#f5f8fa', '#137cbd'] },
   { id: 'things-light', title: 'Things 浅色', description: '白底、浅灰侧栏、蓝色强调。', swatches: ['#ffffff', '#f5f6f8', '#2f7cf6'] },
   { id: 'things-dark', title: 'Things 深色', description: '深灰底、柔和的亮蓝强调。', swatches: ['#1e1f22', '#26282b', '#4c9aff'] },
   { id: 'system', title: '跟随系统', description: '系统浅色时用 Things 浅色，深色时用 Things 深色。', swatches: ['#ffffff', '#1e1f22', '#2f7cf6'] },
@@ -20,7 +21,7 @@ export function ThemeCard({ theme, onChange }: ThemeCardProps) {
         <h3 className="text-base font-semibold text-ink">主题</h3>
         <p className="mt-0.5 text-sm text-muted">只保存在这个浏览器里，换设备需要重新选。</p>
       </header>
-      <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-4" role="radiogroup" aria-label="主题">
+      <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-5" role="radiogroup" aria-label="主题">
         {THEMES.map(({ id, title, description, swatches }) => (
           <button
             key={id}

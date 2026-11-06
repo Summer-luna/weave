@@ -16,6 +16,22 @@
   --font-sans: 'Inter', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', system-ui, sans-serif;
 }
 
+:root[data-theme='roam'] {
+  --color-paper: #ffffff;
+  --color-panel: #ffffff;
+  --color-sidebar: #f5f8fa;
+  --color-ink: #202b33;
+  --color-muted: #5c7080;
+  --color-line: #e1e8ed;
+  --color-accent: #137cbd;
+  --color-accent-soft: #e1eef8;
+  --color-amber: #d9822b;
+  --color-amber-soft: #fff3c4;
+  --color-danger: #db3737;
+  --color-shadow: rgb(16 22 26 / 0.2);
+  --font-sans: 'Inter', -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei UI', system-ui, sans-serif;
+}
+
 :root[data-theme='things-light'] {
   --color-paper: #ffffff;
   --color-panel: #ffffff;
@@ -552,6 +568,43 @@ body {
 
 .block-row.selected .block-content {
   @apply cursor-default select-none;
+}
+
+/* Roam theme */
+
+:root[data-theme='roam'] {
+  .tag-link,
+  .cm-wv-tag {
+    @apply bg-transparent px-0;
+    color: var(--color-muted);
+  }
+
+  .tag-link:hover {
+    @apply bg-transparent underline;
+  }
+
+  .page-link .bracket {
+    color: #ced9e0;
+  }
+
+  .block-bullet > span,
+  .reference-dot {
+    background: #5c7080;
+  }
+
+  .block-children {
+    border-left-color: #e1e8ed;
+  }
+
+  .reference-card {
+    @apply border-transparent;
+    background: #f5f8fa;
+  }
+
+  .md-heading,
+  .page-title {
+    @apply font-bold;
+  }
 }
 
 /* Things themes: Markdown colors */
