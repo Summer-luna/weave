@@ -1,15 +1,18 @@
 import { Bot, Palette } from 'lucide-react';
 import { AgentPermissionCard } from '../components/settings/AgentPermissionCard';
 import { AgentSettingCard } from '../components/settings/AgentSettingCard';
+import { FontCard } from '../components/settings/FontCard';
 import { ThemeCard } from '../components/settings/ThemeCard';
 import { useAgentPermissionController } from '../controllers/use-agent-permission-controller';
 import { useAiSettingsController } from '../controllers/use-ai-settings-controller';
+import { useFontController } from '../controllers/use-font-controller';
 import { useThemeController } from '../controllers/use-theme-controller';
 
 export function SettingsRoute() {
   const { query, settings, save, test } = useAiSettingsController();
   const permission = useAgentPermissionController();
   const appearance = useThemeController();
+  const typeface = useFontController();
 
   return (
     <div>
@@ -19,7 +22,10 @@ export function SettingsRoute() {
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
           <Palette size={19} className="text-accent" /> 外观
         </h2>
-        <ThemeCard theme={appearance.theme} onChange={appearance.change} />
+        <div className="space-y-4">
+          <ThemeCard theme={appearance.theme} onChange={appearance.change} />
+          <FontCard fonts={typeface.fonts} onChange={typeface.change} />
+        </div>
       </section>
 
       <section className="mt-8">

@@ -13,7 +13,40 @@
   --color-amber-soft: #f6e7c6;
   --color-danger: #b8463d;
   --color-shadow: rgb(30 40 40 / 0.35);
-  --font-sans: 'Inter', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-sans: var(--font-latin), var(--font-cjk), system-ui, sans-serif;
+  --font-mono: var(--font-code), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+:root {
+  --font-base-latin: 'Inter Variable', 'Inter';
+  --font-base-cjk: 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei';
+  --font-latin: var(--font-base-latin);
+  --font-cjk: var(--font-base-cjk);
+  --font-code: ui-monospace;
+}
+
+:root[data-font-latin='inter'] {
+  --font-latin: 'Inter Variable';
+}
+
+:root[data-font-latin='ia-quattro'] {
+  --font-latin: 'iA Writer Quattro';
+}
+
+:root[data-font-latin='atkinson'] {
+  --font-latin: 'Atkinson Hyperlegible Next Variable';
+}
+
+:root[data-font-cjk='noto-sans-sc'] {
+  --font-cjk: 'Noto Sans SC Variable';
+}
+
+:root[data-font-cjk='lxgw-wenkai'] {
+  --font-cjk: 'LXGW WenKai';
+}
+
+:root[data-font-code='jetbrains-mono'] {
+  --font-code: 'JetBrains Mono Variable';
 }
 
 :root[data-theme='roam'] {
@@ -29,7 +62,7 @@
   --color-amber-soft: #fff3c4;
   --color-danger: #db3737;
   --color-shadow: rgb(16 22 26 / 0.2);
-  --font-sans: 'Inter', -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei UI', system-ui, sans-serif;
+  --font-base-latin: 'Inter Variable', 'Inter', -apple-system, 'Segoe UI';
 }
 
 :root[data-theme='things-light'] {
@@ -53,7 +86,7 @@
   --md-tag-bg: #e3f5e8;
   --md-highlight: #fff1a8;
   --md-bullet: #c3c7cd;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei UI', system-ui, sans-serif;
+  --font-base-latin: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI';
 }
 
 :root[data-theme='things-dark'] {
@@ -78,7 +111,7 @@
   --md-tag-bg: #1d3a27;
   --md-highlight: #5a4a12;
   --md-bullet: #5b5f66;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei UI', system-ui, sans-serif;
+  --font-base-latin: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI';
 }
 
 html,
@@ -411,7 +444,7 @@ body {
 /* CodeMirror marks */
 
 .cm-wv-codeline {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 0.88em;
   background: color-mix(in srgb, var(--color-ink) 4.5%, transparent);
 }
@@ -444,7 +477,7 @@ body {
 }
 
 .cm-wv-code {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
   background: color-mix(in srgb, var(--color-ink) 7%, transparent);
   border-radius: 3px;
 }
